@@ -939,7 +939,7 @@ public class BgReading extends Model implements ShareUploadableBg {
     }
 
     public static BgReading readingNearTimeStamp(double startTime) {
-        final double margin = (4 * 60 * 1000);
+        final double margin = (4.5 * 60 * 1000); // Every 5 minutes
         final DecimalFormat df = new DecimalFormat("#");
         df.setMaximumFractionDigits(1);
         return new Select()
