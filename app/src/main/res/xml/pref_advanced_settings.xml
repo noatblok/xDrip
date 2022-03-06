@@ -1551,6 +1551,12 @@
                     android:summary="@string/libre_use_smoothed_data_summary"
                     android:title="@string/libre_use_smoothed_data_title" />
 
+                <EditTextPreference
+                    android:defaultValue="4.5"
+                    android:key="libre_segmentation_timeslice"
+                    android:summary="@string/libre_segmentation_timeslice_summary"
+                    android:title="@string/libre_segmentation_timeslice_title" />
+
                 <CheckBoxPreference
                     android:defaultValue="false"
                     android:enabled="true"

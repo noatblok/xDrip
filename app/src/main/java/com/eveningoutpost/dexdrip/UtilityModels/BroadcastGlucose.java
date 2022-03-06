@@ -36,7 +36,7 @@ public class BroadcastGlucose {
                     return;
                 }
 
-                if (Math.abs(bgReading.timestamp - lastTimestamp) < MINUTE_IN_MS) {
+                if (Math.abs(bgReading.timestamp - lastTimestamp) < (0.75 * MINUTE_IN_MS)) {
                     val msg = String.format("Refusing to broadcast a reading with close timestamp to last broadcast:  %s (%d) vs %s (%d) ", dateTimeText(lastTimestamp), lastTimestamp, dateTimeText(bgReading.timestamp), bgReading.timestamp);
                     if (bgReading.timestamp == lastTimestamp) {
                         UserError.Log.d(TAG, msg);
