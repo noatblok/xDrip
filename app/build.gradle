@@ -13,6 +13,8 @@ buildscript {
 }
 apply plugin: 'com.android.application'
 apply from: 'token-replace.gradle'
+apply plugin: 'kotlin-android'
+
 
 if (project.file('local.gradle').exists()) {
     apply from: 'local.gradle'
@@ -50,6 +52,7 @@ repositories {
     flatDir {
         dirs 'libs'
     }
+    mavenCentral()
 }
 
 def generateVersionNumber = { ->
@@ -421,6 +424,7 @@ dependencies {
     // use lombok in unit tests
     testCompileOnly 'org.projectlombok:lombok:1.18.10'
     testAnnotationProcessor 'org.projectlombok:lombok:1.18.10'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 }
 
 tasks.withType(Test) { 
