@@ -167,6 +167,7 @@ public class LibreReceiver extends BroadcastReceiver {
                     Log.v(TAG,"Skipping raw measurement from old sensor at t=" + rawValue.timestamp);
                     continue;
                 }
+                // TODO JB: This should have a try catch block, otherwise the app will crash!!!
                 asg.addMeasurement(rawValue.timestamp,rawValue.glucose);
             }
             try {
