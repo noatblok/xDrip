@@ -24,7 +24,8 @@ public class ReadingData {
 
     private static final byte ERROR_INFLUENCE = 4; //  The influence of each error
     private static final byte PREFERRED_AVERAGE = 5; //  Try to use 5 numbers for the average
-    private static final byte MAX_DISTANCE_FOR_SMOOTHING = 7; //  If points have been removed, use up to 7 numbers for the average.
+    private static final byte MAX_DISTANCE_FOR_SMOOTHING = 7; //  If points have been removed, use up to 7 numbers for the average. not applicable for ASG smoothing
+    private static final byte MIN_DISTANCE_FOR_SMOOTHING = 5; // Minimum number of points we need before we apply smoothing
 
     public ReadingData() {
         this.trend = new ArrayList<GlucoseData>();
@@ -208,7 +209,7 @@ public class ReadingData {
 
     // true means we need to remove this objects.
     private boolean calculateSmoothDataPerPoint(GlucoseData glucoseData, List<LibreTrendPoint> libreTrendPoints, boolean BgValSmoothing, HashSet<Integer> errorHash) {
-        if (glucoseData.sensorTime < MAX_DISTANCE_FOR_SMOOTHING) {
+        if (glucoseData.sensorTime < MIN_DISTANCE_FOR_SMOOTHING) {
             // First values are not interesting, but would make the algorithm more complex.
             return false;
         }
@@ -248,46 +249,55 @@ public class ReadingData {
 
     // true means we need to remove this objects.
     private boolean calculateSmoothDataPerPointSavitzkyGolay(GlucoseData glucoseData, List<LibreTrendPoint> libreTrendPoints, boolean BgValSmoothing, HashSet<Integer> errorHash) {
-        int horizon = Pref.getStringToInt("Libre2_sgHorizon", 15);
-        int lag = Pref.getStringToInt("Libre2_sgLag", 0);
+        int horizon = Pref.getStringToInt("Libre2_sgHorizon", 25);
+        int lag = Pref.getStringToInt("Libre2_sgLag", 2);
         int polynomialOrder = Pref.getStringToInt("Libre2_sgPolynomialOrder", 3);
         double weightedAverageFraction = Pref.getStringToDouble("Libre2_sgWeightedAverageFraction", 0.333);
         int weightedAverageHorizon = Pref.getStringToInt("Libre2_sgWeightedAverageHorizon", 15);
         
-        if (glucoseData.sensorTime < MAX_DISTANCE_FOR_SMOOTHING) {
+        if (glucoseData.sensorTime < MIN_DISTANCE_FOR_SMOOTHING) {
             // First values are not interesting, but would make the algorithm more complex.
-            // TODO JB: Should we use horizon for this?
             return false;
         }
-        int points_used = 0;
-        AdaptiveSavitzkyGolay asg = new AdaptiveSavitzkyGolay(lag, polynomialOrder, weightedAverageFraction, weightedAverageHorizon, 1); // TODO JB: Fix magic
+        int pointsUsed = 0;
+        int pointsUsedRaw = 0;
+        AdaptiveSavitzkyGolay asgBg = new AdaptiveSavitzkyGolay(lag, polynomialOrder, weightedAverageFraction, weightedAverageHorizon, 1);
+        AdaptiveSavitzkyGolay asgRaw = new AdaptiveSavitzkyGolay(lag, polynomialOrder, weightedAverageFraction, weightedAverageHorizon, 1);
 
-        for (int i = horizon; i >= 0; i--) { // TODO JB: maye sort values? and find a way to get more values into asg     
+        for (int i = horizon; i >= 0; i--) {   
             LibreTrendPoint libreTrendPoint = libreTrendPoints.get(glucoseData.sensorTime - i);
             // TODO JB: Does libretrenddata not contain sensor time?
-            // Log.d(TAG, "For loop iteration");
-            if (errorHash.contains(glucoseData.sensorTime - i) || libreTrendPoint.rawSensorValue == 0) {
+            if (errorHash.contains(glucoseData.sensorTime - i)) {
                 Log.d(TAG, "Not using point because it is in error" + libreTrendPoint);
                 continue;
             }
-
-            if (BgValSmoothing && libreTrendPoint.glucoseLevel > 0) {
-                Log.d(TAG, "Using  point for some " + libreTrendPoint);
+            if (libreTrendPoint.rawSensorValue > 0) {
                 try {
-                    asg.addMeasurement(glucoseData.sensorTime -i, (double)libreTrendPoint.glucoseLevel);
+                    asgRaw.addMeasurement(glucoseData.sensorTime - i, (double)libreTrendPoint.rawSensorValue);
+                    // Log this to verbose we can use a lot of points we dont want to clog the debug log
+                    Log.v(TAG, "Using  point for some " + libreTrendPoint); 
+                    pointsUsedRaw++; // TODO JB: Unused
                 } catch (RuntimeException e) {
                     Log.e(TAG, "Failed to add measurement: ",e);
-                    continue;
                 }
-                // Log.d(TAG, "Point added!");
-                points_used++;
+                
+            }
+            if (BgValSmoothing && libreTrendPoint.glucoseLevel > 0) {  
+                try {
+                    asgBg.addMeasurement(glucoseData.sensorTime - i, (double)libreTrendPoint.glucoseLevel);
+                    // Log this to verbose we can use a lot of points we dont want to clog the debug log
+                    Log.v(TAG, "Using  point for some " + libreTrendPoint); 
+                    pointsUsed++;
+                } catch (RuntimeException e) {
+                    Log.e(TAG, "Failed to add measurement: ",e);
+                }
             }
         }
-        Log.d(TAG, "For loop finished");
         try {
-            glucoseData.glucoseLevelSmoothed = (int)Math.round(asg.estimateValue());
-            glucoseData.glucoseLevelRawSmoothed = glucoseData.glucoseLevelRaw; // TODO: fix this
-            Log.i(TAG, "SG setting smooth data based on " + points_used + " points " + glucoseData);
+            glucoseData.glucoseLevelSmoothed = (int)Math.round(asgBg.estimateValue());
+            Log.i(TAG, "ASG setting smooth data based on " + pointsUsed + " points " + glucoseData);
+            glucoseData.glucoseLevelRawSmoothed = (int)Math.round(asgRaw.estimateValue());
+            Log.i(TAG, "ASG setting smooth data for raw values based on " + pointsUsedRaw + " points " + glucoseData);
         } catch (RuntimeException e) {
             Log.e(TAG, "Failed to obtain smoothed BG value, falling back to weighted average",e);
             return calculateSmoothDataPerPoint(glucoseData, libreTrendPoints, BgValSmoothing, errorHash);
