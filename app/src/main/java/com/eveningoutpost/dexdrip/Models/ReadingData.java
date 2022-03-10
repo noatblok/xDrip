@@ -5,6 +5,10 @@ package com.eveningoutpost.dexdrip.Models;
 import com.eveningoutpost.dexdrip.Models.UserError.Log;
 
 import com.eveningoutpost.dexdrip.utils.LibreTrendPoint;
+import com.eveningoutpost.dexdrip.UtilityModels.Pref;
+
+import com.eveningoutpost.dexdrip.utils.math.AdaptiveSavitzkyGolay;
+import com.eveningoutpost.dexdrip.utils.math.PolynomialFitErrorEstimator;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -190,7 +194,12 @@ public class ReadingData {
         Iterator<GlucoseData> it = trend.iterator();
         while (it.hasNext()) {
             GlucoseData glucoseData = it.next();
-            boolean remove = calculateSmoothDataPerPoint(glucoseData, libreTrendPoints, BgValSmoothing, errorHash);
+            boolean remove = true;
+            if (Pref.getBooleanDefaultFalse("Libre2_useSavitzkyGolay")) {
+                remove = calculateSmoothDataPerPointSavitzkyGolay(glucoseData, libreTrendPoints, BgValSmoothing, errorHash);
+            } else {
+                remove = calculateSmoothDataPerPoint(glucoseData, libreTrendPoints, BgValSmoothing, errorHash);
+            }            
             if (remove) {
                 it.remove();
             }
@@ -228,11 +237,60 @@ public class ReadingData {
                 (BgValSmoothing == false || points_used_bg > 0)) {
             glucoseData.glucoseLevelRawSmoothed = (int) (sum / points_used);
             glucoseData.glucoseLevelSmoothed = (int) (sumBg / points_used_bg);
-            Log.d(TAG, "setting smooth data based on " + points_used + " points " + glucoseData);
+            Log.i(TAG, "setting smooth data based on " + points_used + " points " + glucoseData);
         } else {
             //glucoseData.glucoseLevelRawSmoothed = 0;
             Log.e(TAG, "Removing object because it does not have any data " + glucoseData);
             return true;
+        }
+        return false;
+    }
+
+    // true means we need to remove this objects.
+    private boolean calculateSmoothDataPerPointSavitzkyGolay(GlucoseData glucoseData, List<LibreTrendPoint> libreTrendPoints, boolean BgValSmoothing, HashSet<Integer> errorHash) {
+        int horizon = Pref.getStringToInt("Libre2_sgHorizon", 15);
+        int lag = Pref.getStringToInt("Libre2_sgLag", 0);
+        int polynomialOrder = Pref.getStringToInt("Libre2_sgPolynomialOrder", 3);
+        double weightedAverageFraction = Pref.getStringToDouble("Libre2_sgWeightedAverageFraction", 0.333);
+        int weightedAverageHorizon = Pref.getStringToInt("Libre2_sgWeightedAverageHorizon", 15);
+        
+        if (glucoseData.sensorTime < MAX_DISTANCE_FOR_SMOOTHING) {
+            // First values are not interesting, but would make the algorithm more complex.
+            // TODO JB: Should we use horizon for this?
+            return false;
+        }
+        int points_used = 0;
+        AdaptiveSavitzkyGolay asg = new AdaptiveSavitzkyGolay(lag, polynomialOrder, weightedAverageFraction, weightedAverageHorizon, 1); // TODO JB: Fix magic
+
+        for (int i = horizon; i >= 0; i--) { // TODO JB: maye sort values? and find a way to get more values into asg     
+            LibreTrendPoint libreTrendPoint = libreTrendPoints.get(glucoseData.sensorTime - i);
+            // TODO JB: Does libretrenddata not contain sensor time?
+            // Log.d(TAG, "For loop iteration");
+            if (errorHash.contains(glucoseData.sensorTime - i) || libreTrendPoint.rawSensorValue == 0) {
+                Log.d(TAG, "Not using point because it is in error" + libreTrendPoint);
+                continue;
+            }
+
+            if (BgValSmoothing && libreTrendPoint.glucoseLevel > 0) {
+                Log.d(TAG, "Using  point for some " + libreTrendPoint);
+                try {
+                    asg.addMeasurement(glucoseData.sensorTime -i, (double)libreTrendPoint.glucoseLevel);
+                } catch (RuntimeException e) {
+                    Log.e(TAG, "Failed to add measurement: ",e);
+                    continue;
+                }
+                // Log.d(TAG, "Point added!");
+                points_used++;
+            }
+        }
+        Log.d(TAG, "For loop finished");
+        try {
+            glucoseData.glucoseLevelSmoothed = (int)Math.round(asg.estimateValue());
+            glucoseData.glucoseLevelRawSmoothed = glucoseData.glucoseLevelRaw; // TODO: fix this
+            Log.i(TAG, "SG setting smooth data based on " + points_used + " points " + glucoseData);
+        } catch (RuntimeException e) {
+            Log.e(TAG, "Failed to obtain smoothed BG value, falling back to weighted average",e);
+            return calculateSmoothDataPerPoint(glucoseData, libreTrendPoints, BgValSmoothing, errorHash);
         }
         return false;
     }
