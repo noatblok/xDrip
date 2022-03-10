@@ -28,7 +28,7 @@ class AdaptiveSavitzkyGolay @JvmOverloads constructor(
 
     fun addMeasurement(time: Long, glucose: Double) {
         if (rawMeasurements.isNotEmpty() && time <= rawMeasurements.last().time) {
-            TODO("error handling!")
+            throw IllegalStateException("Invalid time!");
         }
         rawMeasurements.add(RawMeasurement(time,glucose))
     }
