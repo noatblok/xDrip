@@ -1305,7 +1305,7 @@ public class BgReading extends Model implements ShareUploadableBg {
     }
 
     // TODO this method shares some code with above.. merge
-    public static void bgReadingInsertFromInt(int value, long timestamp, boolean do_notification, final long segmentation_timeslice) {
+    public static void bgReadingInsertFromInt(int value, long timestamp, boolean do_notification) {
         // TODO sanity check data!
 
         if ((value <= 0) || (timestamp <= 0)) {
@@ -1335,8 +1335,7 @@ public class BgReading extends Model implements ShareUploadableBg {
             }
 
             try {
-                // if (readingNearTimeStamp(bgr.timestamp) == null) {
-                if (getForPreciseTimestamp(bgr.timestamp, segmentation_timeslice, false) == null) {                
+                if (readingNearTimeStamp(bgr.timestamp) == null) {
                     bgr.save();
                     bgr.find_slope();
                     if (do_notification) {
