@@ -254,11 +254,7 @@ public class ReadingData {
         int polynomialOrder = Pref.getStringToInt("Libre2_sgPolynomialOrder", 3);
         double weightedAverageFraction = Pref.getStringToDouble("Libre2_sgWeightedAverageFraction", 0.333);
         int weightedAverageHorizon = Pref.getStringToInt("Libre2_sgWeightedAverageHorizon", 15);
-        
-        if (glucoseData.sensorTime < MIN_DISTANCE_FOR_SMOOTHING) {
-            // First values are not interesting, but would make the algorithm more complex.
-            return false;
-        }
+
         int pointsUsed = 0;
         int pointsUsedRaw = 0;
         AdaptiveSavitzkyGolay asgBg = new AdaptiveSavitzkyGolay(lag, polynomialOrder, weightedAverageFraction, weightedAverageHorizon, 1);
@@ -266,7 +262,6 @@ public class ReadingData {
 
         for (int i = horizon; i >= 0; i--) {   
             LibreTrendPoint libreTrendPoint = libreTrendPoints.get(glucoseData.sensorTime - i);
-            // TODO JB: Does libretrenddata not contain sensor time?
             if (errorHash.contains(glucoseData.sensorTime - i)) {
                 Log.d(TAG, "Not using point because it is in error" + libreTrendPoint);
                 continue;
@@ -276,7 +271,7 @@ public class ReadingData {
                     asgRaw.addMeasurement(glucoseData.sensorTime - i, (double)libreTrendPoint.rawSensorValue);
                     // Log this to verbose we can use a lot of points we dont want to clog the debug log
                     Log.v(TAG, "Using  point for some " + libreTrendPoint); 
-                    pointsUsedRaw++; // TODO JB: Unused
+                    pointsUsedRaw++;
                 } catch (RuntimeException e) {
                     Log.e(TAG, "Failed to add measurement: ",e);
                 }
@@ -294,10 +289,12 @@ public class ReadingData {
             }
         }
         try {
-            glucoseData.glucoseLevelSmoothed = (int)Math.round(asgBg.estimateValue());
-            Log.i(TAG, "ASG setting smooth data based on " + pointsUsed + " points " + glucoseData);
+            if (BgValSmoothing)
+            {
+                glucoseData.glucoseLevelSmoothed = (int)Math.round(asgBg.estimateValue());
+            }
             glucoseData.glucoseLevelRawSmoothed = (int)Math.round(asgRaw.estimateValue());
-            Log.i(TAG, "ASG setting smooth data for raw values based on " + pointsUsedRaw + " points " + glucoseData);
+            Log.i(TAG, "ASG setting smooth data based on " + pointsUsedRaw + " points for the raw values and " + pointsUsed + " points for the OOP native values \n" + glucoseData);
         } catch (RuntimeException e) {
             Log.e(TAG, "Failed to obtain smoothed BG value, falling back to weighted average",e);
             return calculateSmoothDataPerPoint(glucoseData, libreTrendPoints, BgValSmoothing, errorHash);
