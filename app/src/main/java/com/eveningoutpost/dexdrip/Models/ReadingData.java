@@ -222,7 +222,9 @@ public class ReadingData {
         for (int i = 0; i < MAX_DISTANCE_FOR_SMOOTHING && points_used < PREFERRED_AVERAGE; i++) {
             LibreTrendPoint libreTrendPoint = libreTrendPoints.get(glucoseData.sensorTime - i);
             if (errorHash.contains(glucoseData.sensorTime - i) || libreTrendPoint.rawSensorValue == 0) {
-                Log.d(TAG, "Not using point because it is in error" + libreTrendPoint);
+                if (libreTrendPoint.getSensorTime() != 0) {
+                    Log.d(TAG, "Not using point because it is in error" + libreTrendPoint);
+                }
                 continue;
             }
             sum += libreTrendPoint.rawSensorValue;
@@ -238,7 +240,7 @@ public class ReadingData {
                 (BgValSmoothing == false || points_used_bg > 0)) {
             glucoseData.glucoseLevelRawSmoothed = (int) (sum / points_used);
             glucoseData.glucoseLevelSmoothed = (int) (sumBg / points_used_bg);
-            Log.i(TAG, "setting smooth data based on " + points_used + " points " + glucoseData);
+            Log.d(TAG, "setting smooth data based on " + points_used + " points " + glucoseData);
         } else {
             //glucoseData.glucoseLevelRawSmoothed = 0;
             Log.e(TAG, "Removing object because it does not have any data " + glucoseData);
