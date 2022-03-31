@@ -1420,6 +1420,35 @@
                     android:singleLine="true"
                     android:summary="The polyonmial order used for fitting the filtered values."
                     android:title="Noise estimation polynomial order" />
+                <EditTextPreference
+                    android:defaultValue="4.5"
+                    android:key="libre_segmentation_timeslice"
+                    android:selectAllOnFocus="true"
+                    android:singleLine="true"
+                    android:summary="@string/libre_segmentation_timeslice_summary"
+                    android:title="@string/libre_segmentation_timeslice_title" />
+                <CheckBoxPreference
+                    android:defaultValue="false"
+                    android:key="external_blukon_algorithm"
+                    android:summary="@string/use_external_blukon_algorithm_summary"
+                    android:title="@string/use_external_blukon_algorithm" />
+                <CheckBoxPreference
+                    android:defaultValue="true"
+                    android:key="calibrate_external_libre_2_algorithm"
+                    android:summary="@string/calibrate_external_libre_2_algorithm_summary"
+                    android:title="@string/calibrate_external_libre_2_algorithm_title" />
+                <CheckBoxPreference
+                    android:defaultValue="false"
+                    android:enabled="true"
+                    android:key="libre_use_smoothed_data"
+                    android:summary="@string/libre_use_smoothed_data_summary"
+                    android:title="@string/libre_use_smoothed_data_title" />
+                <CheckBoxPreference
+                    android:defaultValue="false"
+                    android:enabled="true"
+                    android:key="retrieve_blukon_history"
+                    android:summary="@string/retrieve_blukon_history_summary"
+                    android:title="@string/retrieve_blukon_history_title" />
             </PreferenceScreen>
 
             <CheckBoxPreference
@@ -1532,38 +1561,6 @@
                     android:key="use_proper_ongoing"
                     android:summary="Use proper ongoing notification. Disabling this causes collector problems on Android 8+"
                     android:title="Proper ongoing" />
-                <CheckBoxPreference
-                    android:defaultValue="false"
-                    android:key="external_blukon_algorithm"
-                    android:summary="@string/use_external_blukon_algorithm_summary"
-                    android:title="@string/use_external_blukon_algorithm" />
-
-                <CheckBoxPreference
-                    android:defaultValue="true"
-                    android:key="calibrate_external_libre_2_algorithm"
-                    android:summary="@string/calibrate_external_libre_2_algorithm_summary"
-                    android:title="@string/calibrate_external_libre_2_algorithm_title" />
-
-                <CheckBoxPreference
-                    android:defaultValue="false"
-                    android:enabled="true"
-                    android:key="libre_use_smoothed_data"
-                    android:summary="@string/libre_use_smoothed_data_summary"
-                    android:title="@string/libre_use_smoothed_data_title" />
-
-                <EditTextPreference
-                    android:defaultValue="4.5"
-                    android:key="libre_segmentation_timeslice"
-                    android:summary="@string/libre_segmentation_timeslice_summary"
-                    android:title="@string/libre_segmentation_timeslice_title" />
-
-                <CheckBoxPreference
-                    android:defaultValue="false"
-                    android:enabled="true"
-                    android:key="retrieve_blukon_history"
-                    android:summary="@string/retrieve_blukon_history_summary"
-                    android:title="@string/retrieve_blukon_history_title" />
-
                 <CheckBoxPreference
                     android:defaultValue="false"
                     android:dependency="allow_testing_with_dead_sensor"
