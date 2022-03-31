@@ -82,7 +82,7 @@ import static com.eveningoutpost.dexdrip.UtilityModels.ColorCache.X;
 import static com.eveningoutpost.dexdrip.UtilityModels.ColorCache.getCol;
 
 public class BgGraphBuilder {
-    public static final int FUZZER = (Pref.getBoolean("lower_fuzzer", false)) ? 500 * 15 * 5 : 1000 * 30 * 5; // 37.5 seconds : 2.5 minutes
+    public static final int FUZZER = (Pref.getBoolean("lower_fuzzer", false)) ? 500 * 15 * 5 : 1000; // 37.5 seconds : 1 minute
     public final static long DEXCOM_PERIOD = 300_000; // 5 minutes
     public final static double NOISE_TRIGGER = 10;
     public final static double NOISE_TRIGGER_ULTRASENSITIVE = 1;
@@ -132,7 +132,7 @@ public class BgGraphBuilder {
 
 
     private final static double timeshift = 500_000;
-    private static final int NUM_VALUES = (60 / 5) * 24;
+    private static final int NUM_VALUES = 60 * 24;// (60 / 5) * 24;TODO do we need a setting for this? or check if our source has 5 minute or minute readings
 
     // flag to indicate if readings data has been adjusted
     private static boolean plugin_adjusted = false;

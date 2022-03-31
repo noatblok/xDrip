@@ -22,7 +22,7 @@ public class ReadingData {
     public List<GlucoseData> history;  // Per 15 minutes data.
     public byte[] raw_data;
 
-    private static final byte ERROR_INFLUENCE = 4; //  The influence of each error
+    private static final byte ERROR_INFLUENCE = 1; //  The influence of each error
     private static final byte PREFERRED_AVERAGE = 5; //  Try to use 5 numbers for the average
     private static final byte MAX_DISTANCE_FOR_SMOOTHING = 7; //  If points have been removed, use up to 7 numbers for the average. not applicable for ASG smoothing
 
