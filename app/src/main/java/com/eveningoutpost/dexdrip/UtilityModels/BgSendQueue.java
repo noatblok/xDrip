@@ -98,6 +98,8 @@ public class BgSendQueue extends Model {
         Log.d("BGQueue", "New value added to queue!");
     }
 
+    private static double lastCloudTimestampBG = 0;
+
     public static void handleNewBgReading(BgReading bgReading, String operation_type, Context context) {
         handleNewBgReading(bgReading, operation_type, context, false);
     }
@@ -114,10 +116,14 @@ public class BgSendQueue extends Model {
         }
         final PowerManager.WakeLock wakeLock = JoH.getWakeLock("sendQueue", 120000);
         try {
-
+            
             // Add to upload queue
             //if (!is_follower) {
+            if (bgReading.timestamp > lastCloudTimestampBG + (4.5 * 60 * 1000))
+            {
+                lastCloudTimestampBG = bgReading.timestamp;
                 UploaderQueue.newEntry(operation_type, bgReading);
+            }
             //}
 
             // all this other UI stuff probably shouldn't be here but in lieu of a better method we keep with it..
