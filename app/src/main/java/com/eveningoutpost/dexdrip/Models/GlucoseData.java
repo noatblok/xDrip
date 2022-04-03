@@ -20,6 +20,7 @@ public class GlucoseData implements Comparable<GlucoseData> {
     public int glucoseLevelRawSmoothed;
     public int flags;
     public int temp;
+    public double noise = 0;
     public DataSource source;
 
     public GlucoseData() {

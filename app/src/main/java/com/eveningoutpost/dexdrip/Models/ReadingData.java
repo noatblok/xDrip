@@ -128,7 +128,7 @@ public class ReadingData {
             Log.e("xxx", "" + i + " raw val " + trend.get(i).glucoseLevelRaw + " smoothed " + trend.get(i).glucoseLevelRawSmoothed);
         }
     }
-
+    // TODO JB: Rename this to make clear it also calculates the noise
     public void ClearErrors(List<LibreTrendPoint> libreTrendPoints) {
         // For the history data where each reading holds data for 15 minutes we remove only bad points.
         Iterator<GlucoseData> it = history.iterator();
@@ -154,7 +154,45 @@ public class ReadingData {
                 Log.e(TAG, "Removing point glucoseData =  " + glucoseData.toString());
                 it.remove();
             }
+            else
+            {
+                calculateNoisePerPoint(glucoseData, libreTrendPoints, errorHash, true); // TODO fix magic
+            }
         }
+    }
+
+    static private void calculateNoisePerPoint(GlucoseData glucoseData, List<LibreTrendPoint> libreTrendPoints, HashSet<Integer> errorHash, boolean useRaw) {
+        // This functions calculates the noise per point give the trendpoint data,
+        // For now only calibrationNoise is detected by getting a vector for the two trends (raw and OOP gd) and comparing them
+
+        // TODO JB: Fix magic
+        // TODO JB: Add detecting wheter we use raw or not
+        // TODO JB: Add normal noise estimation
+        // TODO JB: Get vector instead of points distance estimation
+
+        double calibrationNoiseSensitivity = Pref.getStringToDouble("libre_calibration_noise_correction_factor", 0.45);
+        
+        // Get the calibration factor, We do the average of the last two points to prevent point to point fluctuation impact our estimation too much        
+        double calibrationOffset = ( (glucoseData.glucoseLevelRaw / 8.5) - glucoseData.glucoseLevel + 
+                                    (libreTrendPoints.get(glucoseData.sensorTime - 1).rawSensorValue / 8.5) - libreTrendPoints.get(glucoseData.sensorTime - 1).glucoseLevel) / 2 ;
+                                    // TODO JB: this should account for 0
+        double sum = 0;
+        int points_used = 0;
+        
+        // Calculate the distance between the corrected raw values (with the latest calibration factor) for the last x points
+        for (int i = 0; i < 10 && points_used < 7; i++) {  
+            LibreTrendPoint libreTrendPoint = libreTrendPoints.get(glucoseData.sensorTime -i);
+            if (errorHash.contains(glucoseData.sensorTime-i) || libreTrendPoint.rawSensorValue == 0 || libreTrendPoint.glucoseLevel <= 0)
+            {
+                continue;
+            }
+            double temp = libreTrendPoint.glucoseLevel - (libreTrendPoint.rawSensorValue / 8.5) + calibrationOffset;
+            sum +=temp;
+            Log.e(TAG, "For: " + (glucoseData.sensorTime -i) + " Delta = " + temp + " TrendPoint: " + libreTrendPoint);
+            points_used++;
+        }
+        glucoseData.noise =  Math.exp(Math.abs(sum) * calibrationNoiseSensitivity) - 1;
+        Log.e(TAG, "Time: " + glucoseData.sensorTime + " Offset: " + calibrationOffset + " Sum: " + sum + " Noise: " + glucoseData.noise);
     }
 
     // A helper function to calculate the errors and their influence on data.
