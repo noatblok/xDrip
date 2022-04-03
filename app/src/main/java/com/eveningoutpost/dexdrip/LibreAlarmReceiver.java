@@ -191,10 +191,11 @@ public class LibreAlarmReceiver extends BroadcastReceiver {
         // Get the data for the last 24 hours, as this affects the cache.
         List<LibreTrendPoint> libreTrendPoints = libreTrendUtil.getData(JoH.tsl() - Constants.DAY_IN_MS, JoH.tsl(), true);
 
-        readingData.ClearErrors(libreTrendPoints);
         // This is not a perfect solution, but it should work well in almost all casses except restart.
         // (after restart we will only have data of one reading).
         readingData.copyBgVals(libreTrendPoints);
+
+        readingData.ClearErrors(libreTrendPoints);
 
         boolean use_smoothed_data = Pref.getBooleanDefaultFalse("libre_use_smoothed_data");
         if (use_smoothed_data) {
@@ -255,7 +256,7 @@ public class LibreAlarmReceiver extends BroadcastReceiver {
                     if (use_raw) {
                         createBGfromGD(gd, use_smoothed_data, false); // not quick for recent
                     } else {
-                        BgReading.bgReadingInsertFromInt(use_smoothed_data ? gd.glucoseLevelSmoothed : gd.glucoseLevel, gd.realDate, segmentation_timeslice, true);
+                        BgReading.bgReadingInsertFromInt(use_smoothed_data ? gd.glucoseLevelSmoothed : gd.glucoseLevel, gd.noise, gd.realDate, segmentation_timeslice, true);
                     }
                 }
             } else {
@@ -280,7 +281,7 @@ public class LibreAlarmReceiver extends BroadcastReceiver {
                     } else {
                         polyyList.add((double) gd.glucoseLevel);
                         // add in the actual value
-                        BgReading.bgReadingInsertFromInt(gd.glucoseLevel, gd.realDate, segmentation_timeslice, false);
+                        BgReading.bgReadingInsertFromInt(gd.glucoseLevel, gd.noise, gd.realDate, segmentation_timeslice, false);
                     }
                 }
 
@@ -304,7 +305,7 @@ public class LibreAlarmReceiver extends BroadcastReceiver {
                                 // Here we do not use smoothed data, since data is already smoothed for the history
                                 createBGfromGD(new GlucoseData((int) polySplineF.value(ptime), ptime), false, true);
                             } else {
-                                BgReading.bgReadingInsertFromInt((int) polySplineF.value(ptime), ptime, segmentation_timeslice, false);
+                                BgReading.bgReadingInsertFromInt((int) polySplineF.value(ptime), 0, ptime, segmentation_timeslice, false);
                             }
                         }
                     } catch (org.apache.commons.math3.exception.NonMonotonicSequenceException e) {

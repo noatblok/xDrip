@@ -1427,6 +1427,13 @@
                     android:singleLine="true"
                     android:summary="@string/libre_segmentation_timeslice_summary"
                     android:title="@string/libre_segmentation_timeslice_title" />
+                <EditTextPreference
+                    android:defaultValue="0.45"
+                    android:key="libre_calibration_noise_correction_factor"
+                    android:selectAllOnFocus="true"
+                    android:singleLine="true"
+                    android:summary="@string/libre_calibration_noise_correction_factor_summary"
+                    android:title="@string/libre_calibration_noise_correction_factor_title" />                    
                 <CheckBoxPreference
                     android:defaultValue="false"
                     android:key="external_blukon_algorithm"

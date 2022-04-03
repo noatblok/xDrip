@@ -1309,7 +1309,7 @@ public class BgReading extends Model implements ShareUploadableBg {
     }
 
     // TODO this method shares some code with above.. merge
-    public static void bgReadingInsertFromInt(int value, long timestamp, long margin, boolean do_notification) {
+    public static void bgReadingInsertFromInt(int value, double noise, long timestamp, long margin, boolean do_notification) {
         // TODO sanity check data!
 
         if ((value <= 0) || (timestamp <= 0)) {
@@ -1324,7 +1324,7 @@ public class BgReading extends Model implements ShareUploadableBg {
 
             bgr.timestamp = timestamp;
             bgr.calculated_value = value;
-
+            bgr.noise = String.valueOf(noise);
 
             // rough code for testing!
             bgr.filtered_calculated_value = value;
@@ -1342,11 +1342,12 @@ public class BgReading extends Model implements ShareUploadableBg {
                 if (readingNearTimeStamp(bgr.timestamp, margin) == null) {
                     bgr.save();
                     bgr.find_slope();
-                    if (do_notification) {
-                        // xdrip.getAppContext().startService(new Intent(xdrip.getAppContext(), Notifications.class)); // alerts et al
-                        Notifications.start(); // this may not be needed as it is duplicated in handleNewBgReading
-                    }
-                    BgSendQueue.handleNewBgReading(bgr, "create", xdrip.getAppContext(), false, !do_notification); // pebble and widget
+                    bgr.postProcess(!do_notification, true);
+                    // if (do_notification) {
+                    //     // xdrip.getAppContext().startService(new Intent(xdrip.getAppContext(), Notifications.class)); // alerts et al
+                    //     Notifications.start(); // this may not be needed as it is duplicated in handleNewBgReading
+                    // }
+                    // BgSendQueue.handleNewBgReading(bgr, "create", xdrip.getAppContext(), false, !do_notification); // pebble and widget
                 } else {
                     Log.d(TAG, "Ignoring duplicate bgr record due to timestamp: " + timestamp);
                 }
