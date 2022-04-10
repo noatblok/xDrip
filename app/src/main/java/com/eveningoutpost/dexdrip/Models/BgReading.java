@@ -534,7 +534,7 @@ public class BgReading extends Model implements ShareUploadableBg {
     }
 
     public void postProcess(final boolean quick) {
-        postProcess(quick,false);
+        postProcess(quick, false);
     }
 
     public void postProcess(final boolean quick, boolean handleLibre2Noise) {
@@ -1343,11 +1343,6 @@ public class BgReading extends Model implements ShareUploadableBg {
                     bgr.save();
                     bgr.find_slope();
                     bgr.postProcess(!do_notification, true);
-                    // if (do_notification) {
-                    //     // xdrip.getAppContext().startService(new Intent(xdrip.getAppContext(), Notifications.class)); // alerts et al
-                    //     Notifications.start(); // this may not be needed as it is duplicated in handleNewBgReading
-                    // }
-                    // BgSendQueue.handleNewBgReading(bgr, "create", xdrip.getAppContext(), false, !do_notification); // pebble and widget
                 } else {
                     Log.d(TAG, "Ignoring duplicate bgr record due to timestamp: " + timestamp);
                 }
@@ -1764,32 +1759,22 @@ public class BgReading extends Model implements ShareUploadableBg {
     }
 
     public BgReading injectNoise(boolean save) {
-        return injectNoise(save,false);
+        return injectNoise(save, false);
     }
 
     public BgReading injectNoise(boolean save, boolean handleLibre2Noise) {
         final BgReading bgReading = this;
-        // Get our raw noise estimate back from our temporary stashing location
-        double libre2Noise = handleLibre2Noise ? Double.valueOf(bgReading.noise) : Double.NaN;
         if (!handleLibre2Noise && JoH.msSince(bgReading.timestamp) > Constants.MINUTE_IN_MS * 20) {
             bgReading.noise = "0";
         } else {
             BgGraphBuilder.refreshNoiseIfOlderThan(bgReading.timestamp);
             if (handleLibre2Noise) {
-                // We weren't able to determine a noise level
+                // Get our raw noise estimate back from our temporary stashing location
+                double libre2Noise = Double.valueOf(bgReading.noise);
                 if (libre2Noise == Double.NaN) {
-                    // I don't like the way this is handled, but it mirrors the Dexcom way of doing things
                     BgGraphBuilder.last_noise = -9999;
-
-                    // Storing data here creates a weird UI layout, so don't write the estimates
-                    // BgGraphBuilder.last_bg_estimate = -9999;
-                    // BgGraphBuilder.best_bg_estimate = -9999;
                 } else {
                     BgGraphBuilder.last_noise = libre2Noise;
-
-                    // Storing data here creates a weird UI layout, so don't write the estimates
-                    // BgGraphBuilder.best_bg_estimate = bgReading.calculated_value;
-                    // BgGraphBuilder.last_bg_estimate = bgReading.calculated_value;
                 }
                 // restore the original value of the field
                 bgReading.noise = "0";
