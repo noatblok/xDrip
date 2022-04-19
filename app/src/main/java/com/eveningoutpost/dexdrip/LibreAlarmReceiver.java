@@ -257,7 +257,7 @@ public class LibreAlarmReceiver extends BroadcastReceiver {
                     if (use_raw) {
                         createBGfromGD(gd, use_smoothed_data, false); // not quick for recent
                     } else {
-                        BgReading.bgReadingInsertFromInt(use_smoothed_data ? gd.glucoseLevelSmoothed : gd.glucoseLevel, gd.noise, gd.realDate, segmentation_timeslice, true);
+                        BgReading.bgReadingInsertFromInt(use_smoothed_data ? gd.glucoseLevelSmoothed : gd.glucoseLevel * 1000, gd.noise, gd.realDate, segmentation_timeslice, true);
                     }
                 }
             } else {
@@ -280,9 +280,9 @@ public class LibreAlarmReceiver extends BroadcastReceiver {
                         // For history, data is already averaged, no need for us to use smoothed data
                         createBGfromGD(gd, false, true);
                     } else {
-                        polyyList.add((double) gd.glucoseLevel);
+                        polyyList.add((double) gd.glucoseLevel * 1000);
                         // add in the actual value
-                        BgReading.bgReadingInsertFromInt(gd.glucoseLevel, gd.noise, gd.realDate, segmentation_timeslice, false);
+                        BgReading.bgReadingInsertFromInt(gd.glucoseLevel * 1000, gd.noise, gd.realDate, segmentation_timeslice, false);
                     }
                 }
 

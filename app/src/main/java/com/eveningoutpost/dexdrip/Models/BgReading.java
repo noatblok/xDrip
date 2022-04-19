@@ -1330,14 +1330,14 @@ public class BgReading extends Model implements ShareUploadableBg {
             bgr.uuid = UUID.randomUUID().toString();
 
             bgr.timestamp = timestamp;
-            bgr.calculated_value = value;
+            bgr.calculated_value = (double)value / 1000;
             bgr.noise = String.valueOf(noise);
 
             // rough code for testing!
-            bgr.filtered_calculated_value = value;
-            bgr.raw_data = value;
-            bgr.age_adjusted_raw_value = value;
-            bgr.filtered_data = value;
+            bgr.filtered_calculated_value = (double)value / 1000;
+            bgr.raw_data = (double)value / 1000;
+            bgr.age_adjusted_raw_value = (double)value / 1000;
+            bgr.filtered_data = (double)value / 1000;
 
             final Sensor forced_sensor = Sensor.currentSensor();
             if (forced_sensor != null) {

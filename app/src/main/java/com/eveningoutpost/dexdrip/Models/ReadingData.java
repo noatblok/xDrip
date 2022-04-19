@@ -303,7 +303,7 @@ public class ReadingData {
         if (points_used > 0 &&
                 (BgValSmoothing == false || points_used_bg > 0)) {
             glucoseData.glucoseLevelRawSmoothed = (int) (sum / points_used);
-            glucoseData.glucoseLevelSmoothed = (int) (sumBg / points_used_bg);
+            glucoseData.glucoseLevelSmoothed = (int) (sumBg / points_used_bg) * 1000;
             Log.d(TAG, "setting smooth data based on " + points_used + " points " + glucoseData);
         } else {
             //glucoseData.glucoseLevelRawSmoothed = 0;
@@ -354,7 +354,7 @@ public class ReadingData {
             glucoseData.glucoseLevelRawSmoothed = (int)Math.round(asgRaw.estimateValue());
             if (BgValSmoothing)
             {
-                glucoseData.glucoseLevelSmoothed = (int)Math.round(asgBg.estimateValue());
+                glucoseData.glucoseLevelSmoothed = (int)Math.round(asgBg.estimateValue() * 1000);
                 Log.i(TAG, "ASG setting smooth data based on " + asgRaw.getMeasurementCount() + " points for the raw values and " + asgBg.getMeasurementCount() + " points for the OOP native values \n" + glucoseData);
             }
             else
