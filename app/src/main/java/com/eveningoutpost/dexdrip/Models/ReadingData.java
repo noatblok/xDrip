@@ -28,6 +28,7 @@ public class ReadingData {
     private static final byte PREFERRED_AVERAGE = 5; //  Try to use 5 numbers for the average
     private static final byte MAX_DISTANCE_FOR_SMOOTHING = 7; //  If points have been removed, use up to 7 numbers for the average. not applicable for ASG smoothing
 
+    private static final byte NOISE_HORIZON = 16;
     private static final byte CALIBRATION_NOISE_POINTS_FOR_SLOPE = 5;
     private static final double LIBRE_RAW_BG_DIVIDER = 8.5;
 
@@ -172,40 +173,53 @@ public class ReadingData {
         // For now only calibration noise is detected by getting a trendline for the delta of the two trends and get the slope of the trendline. 
         // when the OOP2 algorithm is not correcting itself the slope should be 0 (ideally). This should prevent downstream apps like androidAPS on acting the spiky data.
 
-        if (useRaw)
-        {
-            // We do not yet handle raw data noise estimation so for now we return early
-            return;
-        }
+        int horizon = Pref.getStringToInt("Libre2_noiseHorizon",NOISE_HORIZON);
+        double calibrationNoise = 0;
+        double noise = 0;
 
         final List<Double> times = new ArrayList<Double>();
         final List<Double> deltas = new ArrayList<Double>();
-        int points_used = 0;
-        for (int i = 0; i < CALIBRATION_NOISE_POINTS_FOR_SLOPE + 2 && points_used < CALIBRATION_NOISE_POINTS_FOR_SLOPE; i++) {  
+        final List<Double> bgs = new ArrayList<Double>();
+
+        for (int i = 0; i < horizon + 2 && times.size() < horizon; i++) {  
             LibreTrendPoint libreTrendPoint = libreTrendPoints.get(glucoseData.sensorTime -i);
-            if (errorHash.contains(glucoseData.sensorTime-i) || libreTrendPoint.rawSensorValue == 0 || libreTrendPoint.glucoseLevel <= 0)
-            {
+            if (errorHash.contains(glucoseData.sensorTime-i) || libreTrendPoint.rawSensorValue == 0 || libreTrendPoint.glucoseLevel <= 0) {
                 continue;
             }
-            times.add((double)(glucoseData.sensorTime-i));
-            deltas.add((double)libreTrendPoint.glucoseLevel - (double)(libreTrendPoint.rawSensorValue / LIBRE_RAW_BG_DIVIDER));
-            points_used++;
+            if (!useRaw && i < CALIBRATION_NOISE_POINTS_FOR_SLOPE + 2 && deltas.size() < CALIBRATION_NOISE_POINTS_FOR_SLOPE) {
+                deltas.add((double)libreTrendPoint.glucoseLevel - (double)(libreTrendPoint.rawSensorValue / LIBRE_RAW_BG_DIVIDER));
+            }
+            if (useRaw) {
+                bgs.add((double)libreTrendPoint.rawSensorValue / LIBRE_RAW_BG_DIVIDER);
+            } else {
+                bgs.add((double)libreTrendPoint.glucoseLevel);
+            }
+            times.add((double)(glucoseData.sensorTime-i)); 
         }
-        if (points_used >= CALIBRATION_NOISE_POINTS_FOR_SLOPE)
-        {      
+        
+        if (!useRaw && deltas.size() >= CALIBRATION_NOISE_POINTS_FOR_SLOPE) {      
             final TrendLine time_to_delta = new PolyTrendLine(1);
-            time_to_delta.setValues(PolyTrendLine.toPrimitiveFromList(deltas), PolyTrendLine.toPrimitiveFromList(times));
+            time_to_delta.setValues(PolyTrendLine.toPrimitiveFromList(deltas), PolyTrendLine.toPrimitiveFromList(times.subList(0, deltas.size())) );
             final double slope = time_to_delta.predict(1) - time_to_delta.predict(0);
             final double errorVarience = time_to_delta.errorVarience();
 
             // Error variance is defined by dot(r,r) / (size(r) - order - 1), to convert our slope to something which resembles errorVarience:
-            final double noise = Math.pow((Math.abs(slope) * CALIBRATION_NOISE_POINTS_FOR_SLOPE), 2) / CALIBRATION_NOISE_POINTS_FOR_SLOPE - 2; 
+            final double noiseFromSlope = Math.pow((Math.abs(slope) * CALIBRATION_NOISE_POINTS_FOR_SLOPE), 2) / CALIBRATION_NOISE_POINTS_FOR_SLOPE - 2; 
 
             // If the errorVarience is higher then the noise calculated from the slope, we use that, as in that case the data is noisy and our slope estimation may be off
-            glucoseData.noise = (errorVarience > noise) ? errorVarience : noise;
+            calibrationNoise = (errorVarience > noiseFromSlope) ? errorVarience : noiseFromSlope;
 
-            Log.d(TAG, "Setting noise level based on, Time: " + glucoseData.sensorTime + " Slope: " + slope + " Error Variance: " + errorVarience + " Noise: " + noise +" Reported: " + glucoseData.noise);
+            Log.d(TAG, "Setting calibration noise level based on, Time: " + glucoseData.sensorTime + " Slope: " + slope + " Error Variance: " + errorVarience + " Noise: " + noiseFromSlope +" Reported: " + calibrationNoise);
         }
+        
+        if(bgs.size() >= horizon) {
+            final TrendLine time_to_bg = new PolyTrendLine(2);
+            time_to_bg.setValues(PolyTrendLine.toPrimitiveFromList(bgs), PolyTrendLine.toPrimitiveFromList(times));
+            noise = time_to_bg.errorVarience() * Pref.getStringToDouble("libre_noise_sensitivity", 1);
+        }
+
+        glucoseData.noise = (calibrationNoise > noise) ? calibrationNoise : noise;
+        Log.i(TAG, "Setting noise, Time: " + glucoseData.sensorTime + " noise: " + noise + " calibration noise: " + calibrationNoise + " Reported: " + glucoseData.noise);
     }
 
     // A helper function to calculate the errors and their influence on data.

@@ -649,7 +649,9 @@
     <string name="libre_segmentation_timeslice_summary">EXPERIMENTAL!! Set timeslice used for libre, set slightly below how many readings you want in minutes.</string>
     <string name="libre_segmentation_timeslice_title">Libre segmentation timeslice in minutes</string>
     <string name="libre_calibration_noise_correction_factor_summary">EXPERIMENTAL!! Sensitivity factor for the callibration noise estimator.</string>
-    <string name="libre_calibration_noise_correction_factor_title">callibration noise Sensitivity</string>
+    <string name="libre_calibration_noise_correction_factor_title">Callibration noise Sensitivity</string>
+    <string name="libre_noise_sensitivity_summary">EXPERIMENTAL!! Sensitivity factor for thenoise estimator.</string>
+    <string name="libre_noise_sensitivity_title">Noise Sensitivity</string>
     <string name="libre_use_smoothed_data_summary">Use average of 5 points to get smoother Libre data.</string>
     <string name="libre_use_smoothed_data_title">Smooth Libre data.</string>
     <string name="retrieve_blukon_history_title">Retrieve Libre history</string>
