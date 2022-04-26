@@ -29,7 +29,7 @@ public class ReadingData {
     private static final byte MAX_DISTANCE_FOR_SMOOTHING = 7; //  If points have been removed, use up to 7 numbers for the average. not applicable for ASG smoothing
 
     private static final byte NOISE_HORIZON = 16;
-    private static final byte CALIBRATION_NOISE_POINTS_FOR_SLOPE = 5;
+    private static final byte CALIBRATION_NOISE_POINTS_FOR_SLOPE = 10;
     private static final double LIBRE_RAW_BG_DIVIDER = 8.5;
 
     public ReadingData() {
@@ -204,12 +204,12 @@ public class ReadingData {
             final double errorVarience = time_to_delta.errorVarience();
 
             // Error variance is defined by dot(r,r) / (size(r) - order - 1), to convert our slope to something which resembles errorVarience:
-            final double noiseFromSlope = Math.pow((Math.abs(slope) * CALIBRATION_NOISE_POINTS_FOR_SLOPE), 2) / CALIBRATION_NOISE_POINTS_FOR_SLOPE - 2; 
+            final double noiseFromSlope = Math.pow(Math.abs(slope), 2) * Pref.getStringToDouble("libre_calibration_noise_correction_factor", 1); 
 
             // If the errorVarience is higher then the noise calculated from the slope, we use that, as in that case the data is noisy and our slope estimation may be off
             calibrationNoise = (errorVarience > noiseFromSlope) ? errorVarience : noiseFromSlope;
 
-            Log.d(TAG, "Setting calibration noise level based on, Time: " + glucoseData.sensorTime + " Slope: " + slope + " Error Variance: " + errorVarience + " Noise: " + noiseFromSlope +" Reported: " + calibrationNoise);
+            Log.d(TAG, "Setting calibration noise level based on, Time: " + glucoseData.sensorTime + " Slope: " + JoH.qs(slope) + " Error Variance: " + JoH.qs(errorVarience) + " Noise: " + JoH.qs(noiseFromSlope) + " Reported: " + JoH.qs(calibrationNoise));
         }
         
         if(bgs.size() >= horizon) {
@@ -219,7 +219,7 @@ public class ReadingData {
         }
 
         glucoseData.noise = (calibrationNoise > noise) ? calibrationNoise : noise;
-        Log.i(TAG, "Setting noise, Time: " + glucoseData.sensorTime + " noise: " + noise + " calibration noise: " + calibrationNoise + " Reported: " + glucoseData.noise);
+        Log.i(TAG, "Setting noise, Time: " + glucoseData.sensorTime + " noise: " + JoH.qs(noise) + " calibration noise: " + JoH.qs(calibrationNoise) + " Reported: " + JoH.qs(glucoseData.noise));
     }
 
     // A helper function to calculate the errors and their influence on data.
