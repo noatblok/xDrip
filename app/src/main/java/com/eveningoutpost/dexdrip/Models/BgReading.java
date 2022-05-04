@@ -528,9 +528,7 @@ public class BgReading extends Model implements ShareUploadableBg {
                 // allow this instead to be fired inside handleNewBgReading when noise will have been injected already
             }
             // Handle noise
-            // TODO JB: this should be nicer?
             bgReading.noise = String.valueOf(noise);
-
             bgReading.postProcess(quick, handleLibreNoise);
 
         }
