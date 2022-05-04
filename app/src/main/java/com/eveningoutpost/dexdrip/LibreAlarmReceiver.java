@@ -78,7 +78,7 @@ public class LibreAlarmReceiver extends BroadcastReceiver {
             // if treating converted value as raw
             if (gd.glucoseLevel > 0) {
                 if (use_smoothed_data && gd.glucoseLevelSmoothed > 0) {
-                    converted  = gd.glucoseLevelSmoothed * 1000;
+                    converted  = gd.glucoseLevelSmoothed;
                     Log.e(TAG, "Using smoothed value as raw " + converted + " instead of " + gd.glucoseLevel);
                 } else {
                     converted = gd.glucoseLevel * 1000;
@@ -216,7 +216,7 @@ public class LibreAlarmReceiver extends BroadcastReceiver {
         // (after restart we will only have data of one reading).
         readingData.copyBgVals(libreTrendPoints);
         // Noise estimation needs all BgVals so we do this function after copyBgVals()
-        readingData.ClearErrors(libreTrendPoints, use_raw);
+        readingData.ClearErrors(libreTrendPoints);
 
         if (use_smoothed_data) {
             readingData.calculateSmoothDataImproved(libreTrendPoints, bg_val_exists);

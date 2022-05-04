@@ -135,7 +135,7 @@ public class ReadingData {
         }
     }
     // TODO JB: Rename this to make clear it also calculates the noise
-    public void ClearErrors(List<LibreTrendPoint> libreTrendPoints, boolean useRaw) {
+    public void ClearErrors(List<LibreTrendPoint> libreTrendPoints) {
         // For the history data where each reading holds data for 15 minutes we remove only bad points.
         Iterator<GlucoseData> it = history.iterator();
         while (it.hasNext()) {
@@ -163,17 +163,18 @@ public class ReadingData {
             else
             {
                 // TODO JB: Not sure if this is the right place for it but it seems so
-                calculateNoisePerPoint(glucoseData, libreTrendPoints, errorHash, useRaw);
+                calculateNoisePerPoint(glucoseData, libreTrendPoints, errorHash);
             }
         }
     }
 
-    static private void calculateNoisePerPoint(GlucoseData glucoseData, List<LibreTrendPoint> libreTrendPoints, HashSet<Integer> errorHash, boolean useRaw) {
+    static private void calculateNoisePerPoint(GlucoseData glucoseData, List<LibreTrendPoint> libreTrendPoints, HashSet<Integer> errorHash) {
         // This function calculates the noise per point given the trendpoint data,
         // For now only calibration noise is detected by getting a trendline for the delta of the two trends and get the slope of the trendline. 
         // when the OOP2 algorithm is not correcting itself the slope should be 0 (ideally). This should prevent downstream apps like androidAPS on acting the spiky data.
 
         int horizon = Pref.getStringToInt("Libre2_noiseHorizon",NOISE_HORIZON);
+        boolean bgInUse = !Pref.getString("calibrate_external_libre_2_algorithm_type", "calibrate_raw").equals("calibrate_raw");
         double calibrationNoise = 0;
         double noise = 0;
 
@@ -186,18 +187,18 @@ public class ReadingData {
             if (errorHash.contains(glucoseData.sensorTime-i) || libreTrendPoint.rawSensorValue == 0 || libreTrendPoint.glucoseLevel <= 0) {
                 continue;
             }
-            if (!useRaw && i < CALIBRATION_NOISE_POINTS_FOR_SLOPE + 2 && deltas.size() < CALIBRATION_NOISE_POINTS_FOR_SLOPE) {
+            if (bgInUse && i < CALIBRATION_NOISE_POINTS_FOR_SLOPE + 2 && deltas.size() < CALIBRATION_NOISE_POINTS_FOR_SLOPE) {
                 deltas.add((double)libreTrendPoint.glucoseLevel - (double)(libreTrendPoint.rawSensorValue / LIBRE_RAW_BG_DIVIDER));
             }
-            if (useRaw) {
-                bgs.add((double)libreTrendPoint.rawSensorValue / LIBRE_RAW_BG_DIVIDER);
-            } else {
+            if (bgInUse) {
                 bgs.add((double)libreTrendPoint.glucoseLevel);
+            } else {
+                bgs.add((double)libreTrendPoint.rawSensorValue / LIBRE_RAW_BG_DIVIDER);
             }
             times.add((double)(glucoseData.sensorTime-i)); 
         }
         
-        if (!useRaw && deltas.size() >= CALIBRATION_NOISE_POINTS_FOR_SLOPE) {      
+        if (bgInUse && deltas.size() >= CALIBRATION_NOISE_POINTS_FOR_SLOPE) {      
             final TrendLine time_to_delta = new PolyTrendLine(1);
             time_to_delta.setValues(PolyTrendLine.toPrimitiveFromList(deltas), PolyTrendLine.toPrimitiveFromList(times.subList(0, deltas.size())) );
             final double slope = time_to_delta.predict(1) - time_to_delta.predict(0);
