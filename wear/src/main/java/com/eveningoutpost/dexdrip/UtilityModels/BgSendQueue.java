@@ -130,6 +130,9 @@ public class BgSendQueue extends Model {
 
             final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
 
+            // emit local broadcast
+            BroadcastGlucose.sendLocalBroadcast(bgReading);
+
             // all this other UI stuff probably shouldn't be here but in lieu of a better method we keep with it..
 
             //KS Following is not needed on watch

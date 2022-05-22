@@ -1224,7 +1224,9 @@ public class Ob1G5StateMachine {
 
             if (android_wear && wear_broadcast && bgReading != null && bgReading.timestamp == rxtimestamp) {
                 // emit local broadcast on wear if reading was newly created
-                BroadcastGlucose.sendLocalBroadcast(bgReading);
+                // BroadcastGlucose.sendLocalBroadcast(bgReading);
+                // TODO JB: This is a quick hack, check to see if this is really the place to initiate the post processing for wear
+                bgReading.postProcess(false);
             }
 
             if (WholeHouse.isLive()) {
