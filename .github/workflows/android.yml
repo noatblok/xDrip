@@ -2,7 +2,7 @@ name: Android CI
 
 on:
   push:
-    branches: [ "" ]
+    branches: [ "jbr7rr-wear" ]
   pull_request:
     branches: [ "master" ]
 
@@ -21,6 +21,6 @@ jobs:
         cache: gradle
 
     - name: Grant execute permission for gradlew
-      run: chmod +x g
+      run: chmod +x gradlew
     - name: Build with Gradle
       run: ./gradlew build
